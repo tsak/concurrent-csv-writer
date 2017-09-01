@@ -1,4 +1,4 @@
-// A "thread" safe way of writing to CSV files
+// Package ccsv provides a "thread" safe way of writing to CSV files
 package ccsv
 
 import (
@@ -7,6 +7,7 @@ import (
 	"sync"
 )
 
+// CsvWriter holds pointers to a Mutex, csv.Writer and the underlying CSV file
 type CsvWriter struct {
 	mutex     *sync.Mutex
 	csvWriter *csv.Writer
@@ -30,7 +31,7 @@ func (w *CsvWriter) Write(row []string) error {
 	return w.csvWriter.Write(row)
 }
 
-// Write multiple rows to a CSV file
+// WriteAll writes multiple rows to a CSV file
 func (w *CsvWriter) WriteAll(records [][]string) error {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
