@@ -1,5 +1,8 @@
 # Concurrent CSV writer
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/tsak/concurrent-csv-writer)](https://goreportcard.com/report/github.com/tsak/concurrent-csv-writer)
+[![GoDoc](https://godoc.org/github.com/tsak/concurrent-csv-writer?status.svg)](https://godoc.org/github.com/tsak/concurrent-csv-writer)
+
 A thread-safe way of concurrent writes to a CSV file in Go. Order of rows is **NOT** guaranteed.
 
 Inspired by a [blog post](http://www.markhneedham.com/blog/2017/01/31/go-multi-threaded-writing-csv-file/) by [Mark Needham](http://www.markhneedham.com).
