@@ -1,10 +1,10 @@
 package ccsv
 
 import (
-	"testing"
-	"os"
 	"bufio"
+	"os"
 	"strconv"
+	"testing"
 )
 
 func getCsvWriter() *CsvWriter {

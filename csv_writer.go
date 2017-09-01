@@ -2,9 +2,9 @@
 package ccsv
 
 import (
-	"sync"
 	"encoding/csv"
 	"os"
+	"sync"
 )
 
 type CsvWriter struct {
