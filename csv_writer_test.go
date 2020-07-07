@@ -131,3 +131,16 @@ func TestCsvWriter_Close(t *testing.T) {
 
 	deleteCsvFile()
 }
+
+func BenchmarkCsvWriter_Write(b *testing.B) {
+	csvWriter := getCsvWriter()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			go csvWriter.Write([]string{"foo", "bar", "baz"})
+		}
+	})
+
+	csvWriter.Close()
+	deleteCsvFile()
+}
