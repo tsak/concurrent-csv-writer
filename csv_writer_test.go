@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"strconv"
+	"sync"
 	"testing"
 )
 
@@ -135,10 +136,32 @@ func TestCsvWriter_Close(t *testing.T) {
 func BenchmarkCsvWriter_Write(b *testing.B) {
 	csvWriter := getCsvWriter()
 
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			go csvWriter.Write([]string{"foo", "bar", "baz"})
-		}
+	b.Run("nil-slice", func(b *testing.B) {
+		wg := sync.WaitGroup{}
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					csvWriter.Write(nil)
+				}()
+			}
+		})
+		wg.Wait()
+	})
+
+	b.Run("row", func(b *testing.B) {
+		wg := sync.WaitGroup{}
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					csvWriter.Write(row)
+				}()
+			}
+		})
+		wg.Wait()
 	})
 
 	csvWriter.Close()
