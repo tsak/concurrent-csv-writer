@@ -74,6 +74,20 @@ Notice the lack of order of entries.
 ...
 ```
 
+## Benchmark
+
+Running `go test -bench .`
+
+```
+goos: linux
+goarch: amd64
+pkg: github.com/tsak/concurrent-csv-writer
+BenchmarkCsvWriter_Write/nil-slice-8              890214              1329 ns/op
+BenchmarkCsvWriter_Write/row-8                    816813              1471 ns/op
+PASS
+ok      github.com/tsak/concurrent-csv-writer   3.954s
+```
+
 ## License
 
 [MIT](https://github.com/tsak/concurrent-csv-writer/blob/master/LICENSE)
