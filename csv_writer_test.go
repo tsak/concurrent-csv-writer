@@ -3,7 +3,7 @@ package ccsv
 import (
 	"bufio"
 	"os"
-	"strconv"
+	"sync"
 	"testing"
 )
 
@@ -52,28 +52,39 @@ func TestNewCsvWriter(t *testing.T) {
 		t.Error("should have closed CSV file")
 	}
 
+	err = csvWriter.Close()
+	if err == nil {
+		t.Error("should have complained about already closed CSV file")
+	}
+
 	deleteCsvFile()
 }
 
 func TestCsvWriter_Write(t *testing.T) {
 	csvWriter := getCsvWriter()
 
+	wg := sync.WaitGroup{}
 	t.Run("multiple single row writes", func(t *testing.T) {
-		for i := 0; i < 10; i++ {
-			t.Run("single row write "+strconv.Itoa(i), func(t *testing.T) {
+		for i := 0; i < 1000; i++ {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
 				err := csvWriter.Write(row)
 				if err != nil {
 					t.Error("should have written a row to the CSV file")
 				}
-			})
+			}(i)
 		}
 	})
 
-	csvWriter.Flush()
-	csvWriter.Close()
+	wg.Wait()
 
-	if ok := rowCount() != 10; ok {
-		t.Error("expected to see 10 rows in CSV file")
+	if err := csvWriter.Close(); err != nil {
+		t.Errorf("expected no error when closing CSV file, got %s", err)
+	}
+
+	if ok := rowCount() != 1000; ok {
+		t.Error("expected to see 1000 rows in CSV file")
 	}
 
 	deleteCsvFile()
@@ -81,24 +92,29 @@ func TestCsvWriter_Write(t *testing.T) {
 
 func TestCsvWriter_WriteAll(t *testing.T) {
 	csvWriter := getCsvWriter()
-	defer csvWriter.Close()
 
+	wg := sync.WaitGroup{}
 	t.Run("multiple multi row writes", func(t *testing.T) {
-		for i := 0; i < 10; i++ {
-			t.Run("multi row write "+strconv.Itoa(i), func(t *testing.T) {
+		for i := 0; i < 1000; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
 				err := csvWriter.WriteAll(rows)
 				if err != nil {
 					t.Error("should have written a row to the CSV file")
 				}
-			})
+			}()
 		}
 	})
 
-	csvWriter.Flush()
-	csvWriter.Close()
+	wg.Wait()
 
-	if ok := rowCount() != 30; ok {
-		t.Error("expected to see 30 rows in CSV file")
+	if err := csvWriter.Close(); err != nil {
+		t.Errorf("expected no error when closing CSV file, got %s", err)
+	}
+
+	if ok := rowCount() != 3000; ok {
+		t.Error("expected to see 3000 rows in CSV file")
 	}
 
 	deleteCsvFile()
@@ -107,15 +123,20 @@ func TestCsvWriter_WriteAll(t *testing.T) {
 func TestCsvWriter_Flush(t *testing.T) {
 	csvWriter := getCsvWriter()
 
-	csvWriter.Write(row)
-	err := csvWriter.Flush()
-	if err != nil {
+	if err := csvWriter.WriteAll(rows); err != nil {
+		t.Errorf("expected no error when writing csv file, got: %s", err)
+	}
+
+	if err := csvWriter.Flush(); err != nil {
 		t.Error("should have flushed output buffers for CSV file")
 	}
-	csvWriter.Close()
 
-	if ok := rowCount() != 1; ok {
-		t.Error("expected to see one row in CSV file")
+	if err := csvWriter.Close(); err != nil {
+		t.Errorf("expected no error when closing CSV file, got %s", err)
+	}
+
+	if ok := rowCount() != 3; ok {
+		t.Error("expected to see three rows in CSV file")
 	}
 
 	deleteCsvFile()
@@ -124,9 +145,8 @@ func TestCsvWriter_Flush(t *testing.T) {
 func TestCsvWriter_Close(t *testing.T) {
 	csvWriter := getCsvWriter()
 
-	err := csvWriter.Close()
-	if err != nil {
-		t.Error("expected to close underlying file io stream")
+	if err := csvWriter.Close(); err != nil {
+		t.Errorf("expected to close underlying file io stream without error, got: %s", err)
 	}
 
 	deleteCsvFile()
@@ -135,10 +155,32 @@ func TestCsvWriter_Close(t *testing.T) {
 func BenchmarkCsvWriter_Write(b *testing.B) {
 	csvWriter := getCsvWriter()
 
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			go csvWriter.Write([]string{"foo", "bar", "baz"})
-		}
+	b.Run("nil-slice", func(b *testing.B) {
+		wg := sync.WaitGroup{}
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					csvWriter.Write(nil)
+				}()
+			}
+		})
+		wg.Wait()
+	})
+
+	b.Run("row", func(b *testing.B) {
+		wg := sync.WaitGroup{}
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					csvWriter.Write(row)
+				}()
+			}
+		})
+		wg.Wait()
 	})
 
 	csvWriter.Close()
