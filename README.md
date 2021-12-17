@@ -10,9 +10,7 @@ Inspired by a [blog post](http://www.markhneedham.com/blog/2017/01/31/go-multi-t
 ## Usage
 
 ```go
-import (
-    "github.com/tsak/concurrent-csv-writer"
-)
+import "github.com/tsak/concurrent-csv-writer"
 ```
     
 ```bash
